@@ -1,0 +1,46 @@
+{
+    "version": "1.0.1",
+
+    "name": "CentralReach Chrome Helper",
+    "short_name": "CentralReach",
+    "description": "CentralReach helper specifically for Chrome browser allowing native notifications for various modules",
+    "manifest_version": 2,
+
+    "icons": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+    },
+
+    "options_ui": {
+        "page": "options.html",
+        "chrome_style": true
+    },
+
+    "background": {
+        "scripts": [
+            "js/libs/jquery3.2.1.js",
+            "js/libs/forge0.7.1.js",
+            "js/libs/ss-utils.js",
+            "js/crapi.js",
+            "js/background.js"
+        ],
+        "persistent": false
+    },
+
+    "browser_action": {
+        "default_icon": "images/icon.png",
+        "default_popup": "popup.html"
+    },
+
+    "permissions": [
+        "alarms",
+        "activeTab",
+        "tabs",
+        "storage",
+        "notifications",
+        "idle",
+        "https://*.centralreach.com/*",
+        "management"
+    ]
+}

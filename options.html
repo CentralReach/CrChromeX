@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>CentralReach Options</title>
+	<style>
+		body: { padding: 10px; }
+	</style>
+</head>
+
+<body>
+	<div>
+		<label>
+			<input type="checkbox" id="crnotifymessages">
+			Show Message Notifications
+		</label>
+	</div>
+	<div>
+		<label>
+			<input type="checkbox" id="crnotifyevents">
+			Show Event Notifications
+		</label>
+	</div>
+
+	<div>
+    	<label>
+      		<input type="checkbox" id="cropennewtab">
+      		Always Open Notification Links in new tab
+    	</label>
+  	</div>
+
+	<div>
+    	<label>
+      		<input type="checkbox" id="crneveractivetab">
+      		Never Open Notification Links in active tab
+    	</label>
+  	</div>
+
+	<div>
+		<label title="If not set or set to <= 0, will fall back to using your default Notification settings for Chrome">
+			Auto clear notifications after (seconds, 0-10)
+			<input type="number" id="crclearnotificationafter" min="0" max="10">
+		</label>
+	</div>
+
+	<div>
+		<label title="Set to the + or - offset in minutes that you want event reminders for vs. the scheduled event time">
+			Event minutes offset (vs. scheduled event timezone, in minutes)
+			<input type="number" id="creventsoffsetminutes" min="-1440" max="1440">
+		</label>
+	</div>
+
+	<button id="save">Save</button>
+	<div id="status"></div>
+
+	<script src="js/options.js"></script>
+</body>
+</html>
