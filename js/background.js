@@ -41,12 +41,57 @@ chrome.notifications.onClicked.addListener(function(notificationId) {
 		goToNotificationUrl(url);
 	}
 
-	chrome.notifications.clear(notificationId);
+	clearEventAlarmAndNotify(notificationId);
+});
+
+chrome.notifications.onButtonClicked.addListener(function(notificationId, buttonIndex) {
+	if (buttonIndex == 0) {
+		// Snooze the reminder to this event for x minutes
+		chrome.storage.local.get({
+			[notificationId]: null
+		}, function(i) {
+			if (chrome.runtime.lastError || !i) {
+				return;
+			}
+
+			var alarmName = i[notificationId];
+
+			chrome.storage.sync.get({
+				crEventReminderSnooze: 2
+			}, function(r) {
+				if (chrome.runtime.lastError) {
+					return;
+				}
+
+				var snoozeMinutes = r.crEventReminderSnooze
+
+				chrome.storage.local.get({
+					[alarmName]: null
+				}, function(ar) {
+					var now = Date.now();
+					var alarmTime = now + (snoozeMinutes * 60000);
+
+					if (ar && ar[alarmName]) {
+						var eventModel = JSON.parse(forge.util.decode64(ar[alarmName]));
+
+						// If we have the eventModel and know when it starts, if the alarmTime with the snooze
+						// is after the event but the current time is still before the event, set the alarm for
+						// the start of the event instead...
+						if (eventModel && eventModel.occursAt && alarmTime > eventModel.occursAt && now < eventModel.occursAt) {
+							alarmTime = eventModel.occursAt;
+						}
+					}
+
+					chrome.alarms.create(alarmName, { when: alarmTime });
+				});
+			});
+		});
+	}
 });
 
 chrome.notifications.onClosed.addListener(function(notificationId, byUser) {
 	// Close should clear, but to be safe on all versions...
-	chrome.notifications.clear(notificationId);
+	clearEventAlarmAndNotify(notificationId);
 });
 
 function handleMyNotification(msg) {
@@ -74,9 +119,9 @@ function getUrlFromNotificationId(notificationId) {
 
 	var url = forge.util.decode64(notificationId);
 
-	return url.substring(0,4) == 'http'
-				? url
-				: null;
+	return (url.substring(0,4) == 'http')
+			? url
+			: null;
 }
 
 function goToNotificationUrl(url) {
@@ -139,6 +184,8 @@ function processMessageNotification(msg) {
 
 		var notificationId = getMsgNotificationId(msg, true);
 
+		chrome.notifications.clear(notificationId);
+
 		chrome.notifications.create(notificationId, {
 			type: 'basic',
 			iconUrl: 'images/notify.png',
@@ -178,30 +225,28 @@ function handleEventAlarm(a) {
 	chrome.storage.sync.get({
 		crNotifyEvents: true,
 		crClearNotificationAfter: 0
-	}, function(r) {
+	}, function(sr) {
 		if (chrome.runtime.lastError) {
 			return;
 		}
-		if (!r.crNotifyEvents) {
+		if (!sr.crNotifyEvents) {
 			return;
 		}
 
 		var alarmName = a.name;
-		var crClearNotificationAfter = r.crClearNotificationAfter;
+		var crClearNotificationAfter = sr.crClearNotificationAfter;
 
 		chrome.storage.local.get({
 			[alarmName]: null
-		}, function(r) {
+		}, function(ar) {
 			if (chrome.runtime.lastError) {
 				return;
 			}
-			if (!r || !r[alarmName]) {
+			if (!ar || !ar[alarmName]) {
 				return;
 			}
 
-			var eventModel = JSON.parse(forge.util.decode64(r[alarmName]));
-
-			chrome.storage.local.remove(alarmName);
+			var eventModel = JSON.parse(forge.util.decode64(ar[alarmName]));
 
 			if (!eventModel) {
 				return;
@@ -209,22 +254,58 @@ function handleEventAlarm(a) {
 
 			var notificationId = forge.util.encode64(eventModel.url);
 
-			chrome.notifications.create(notificationId, {
-				type: 'basic',
-				iconUrl: 'images/notify.png',
-				title: 'Event: ' + eventModel.title,
-				message: eventModel.message,
-				isClickable: true,
-				requireInteraction: false
-			}, function(nid) {
-				if (crClearNotificationAfter > 0) {
-					setTimeout(function() {
-						chrome.notifications.clear(nid);
-					}, (crClearNotificationAfter * 1000));
+			chrome.storage.local.set({
+				[notificationId]: alarmName
+			}, function() {
+				if (chrome.runtime.lastError) {
+					return;
 				}
+
+				chrome.notifications.clear(notificationId);
+
+				chrome.notifications.create(notificationId, {
+					type: 'basic',
+					iconUrl: 'images/notify.png',
+					title: 'Event: ' + eventModel.title,
+					message: eventModel.message,
+					isClickable: true,
+					requireInteraction: false,
+					buttons: [{
+						title: "Snooze"
+					}]
+				}, function(nid) {
+					if (crClearNotificationAfter > 0) {
+						setTimeout(function() {
+							clearEventAlarmAndNotify(nid, alarmName);
+						}, (crClearNotificationAfter * 1000));
+					}
+				});
 			});
 		});
 	});
+}
+
+function clearEventAlarmAndNotify(notificationId, alarmName) {
+	chrome.storage.local.remove(notificationId);
+
+	if (alarmName) {
+		chrome.storage.local.remove(alarmName);
+	} else {
+		chrome.storage.local.get({
+			[notificationId]: null
+		}, function(r) {
+			if (chrome.runtime.lastError) {
+				return;
+			}
+			if (!r || !r[notificationId]) { 
+				return;
+			}
+
+			chrome.storage.local.remove(r[notificationId]);
+		});
+	}
+
+	chrome.notifications.clear(notificationId);
 }
 
 function getEventsToMonitor() {
@@ -247,47 +328,86 @@ function getEventsToMonitor() {
 				}
 
 				r.results.forEach(function(e) {
-						createEventAlarm({
-							occursAt: e.eventStart,
-							recordId: e.courseId,
-							urlPath: `https://members.centralreach.com/#scheduling/edit/a/${e.courseId}/dt/2018-01-17`,
-							from: '',
-							title: e.eventName,
-							message: e.eventDescription
-						}, s.crEventsOffsetMinutes);
-					});
-			});
+					var url = e.urlPath;
 
-			
-		})
+					if (!url) {
+						var eventDateTime = new Date(e.eventStart * 1000);
+						var displayMonth = `0${eventDateTime.getMonth() + 1}`.slice(-2);
+						var displayDay = `0${eventDateTime.getDate()}`.slice(-2);
+						var dateString = `${eventDateTime.getFullYear()}-${displayMonth}-${displayDay}`;
+
+						url = `https://members.centralreach.com/#scheduling/edit/a/${e.courseId}/dt/${dateString}`;
+					}
+
+					createEventAlarm({
+						occursAt: e.eventStart,
+						recordId: e.courseId,
+						urlPath: url,
+						from: e.from || '',
+						title: e.eventName,
+						message: e.eventDescription
+					}, s.crEventsOffsetMinutes);
+				});
+			});
+		});
 }
 
 function createEventAlarm(msg, offsetMinutes) {
-
 	var myEventOccursAt = (msg.occursAt * 1000) + offsetMinutes;
 	var now = Date.now();
-	var ignoreAfter = now + 100000000; // basically +1 day
+	var ignoreAfter = now + 200000000; // basically +2 day
 	var eventLocalId = 'cre-' + msg.recordId;
 
 	if (myEventOccursAt < now || myEventOccursAt > ignoreAfter) {
 		return;
 	}
 
-	var eventModel64 = forge.util.encode64(JSON.stringify({
-		url: msg.urlPath,
-		from: msg.from,
-		title: msg.title,
-		occursAt: myEventOccursAt,
-		message: msg.message
-	}));
+	chrome.storage.sync.get({
+		crEventReminderBuffer: 5
+	}, function(r) {
+		var eventModel64 = forge.util.encode64(JSON.stringify({
+			url: msg.urlPath,
+			from: msg.from,
+			title: msg.title,
+			occursAt: myEventOccursAt,
+			message: msg.message
+		}));
 
-	chrome.storage.local.set({
-		[eventLocalId]: eventModel64
-	}, function() {
-		if (chrome.runtime.lastError) {
+		chrome.storage.local.set({
+			[eventLocalId]: eventModel64
+		}, function() {
+			if (chrome.runtime.lastError) {
+				return;
+			}
+
+			var alarmAt = (myEventOccursAt - (r.crEventReminderBuffer * 60000));
+			chrome.alarms.create(eventLocalId, { when: alarmAt });
+		});
+	});
+}
+
+function getExisting() {
+	chrome.storage.local.get(null, function(items) {
+		if (chrome.runtime.lastError || !items) {
 			return;
 		}
 
-		chrome.alarms.create(eventLocalId, { when: myEventOccursAt });
+		Object.keys(items).forEach(function(e) {
+			if (!e || e.substring(0,4) != 'cre-') {
+				return;
+			}
+
+			var eventModel = JSON.parse(forge.util.decode64(items[e]));
+
+			if (!eventModel) {
+				chrome.storage.local.remove(items[e]);
+			}
+
+			// var notificationId = forge.util.encode64(eventModel.url);
+
+			// reschedule the alarm if it is still in the future...remove it if not...
+
+		});
 	});
 }
+

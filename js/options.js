@@ -5,7 +5,9 @@ function saveOptions() {
     var crNeverActiveTab = document.getElementById('crneveractivetab').checked;
     var crClearNotificationAfter = document.getElementById('crclearnotificationafter').value;
     var crEventsOffsetMinutes = document.getElementById('creventsoffsetminutes').value;
-
+    var crEventReminderBuffer = document.getElementById('creventreminderbuffer').value;
+    var crEventReminderSnooze = document.getElementById('creventremindersnooze').value;
+    
     if (crClearNotificationAfter > 10) {
         crClearNotificationAfter = 10
     }
@@ -14,6 +16,10 @@ function saveOptions() {
         crEventsOffsetMinutes = 0;
     } else if (crEventsOffsetMinutes < -1440) {
         crEventsOffsetMinutes = 0;
+    }
+
+    if (crEventReminderSnooze < 0 || crEventReminderSnooze > 300) {
+        crEventReminderSnooze = 5;
     }
 
     if (!crNotifyEvents) {
@@ -26,7 +32,9 @@ function saveOptions() {
         crOpenNewTab: crOpenNewTab,
         crNeverActiveTab: crNeverActiveTab,
         crClearNotificationAfter: crClearNotificationAfter,
-        crEventsOffsetMinutes: crEventsOffsetMinutes
+        crEventsOffsetMinutes: crEventsOffsetMinutes,
+        crEventReminderBuffer: crEventReminderBuffer,
+        crEventReminderSnooze: crEventReminderSnooze
     }, function() {
         var status = document.getElementById('status');
 
@@ -46,7 +54,9 @@ function restoreOptions() {
         crOpenNewTab: false,
         crNeverActiveTab: false,
         crClearNotificationAfter: 0,
-        crEventsOffsetMinutes: 0
+        crEventsOffsetMinutes: 0,
+        crEventReminderBuffer: 5,
+        crEventReminderSnooze: 2
     }, function(items) {
         document.getElementById('crnotifymessages').checked = items.crNotifyMessages;
         document.getElementById('crnotifyevents').checked = items.crNotifyEvents;
@@ -54,6 +64,8 @@ function restoreOptions() {
         document.getElementById('crneveractivetab').checked = items.crNeverActiveTab;
         document.getElementById('crclearnotificationafter').value = items.crClearNotificationAfter;
         document.getElementById('creventsoffsetminutes').value = items.crEventsOffsetMinutes;
+        document.getElementById('creventreminderbuffer').value = items.crEventReminderBuffer;
+        document.getElementById('creventremindersnooze').value = items.crEventReminderSnooze;
     });
 }
 

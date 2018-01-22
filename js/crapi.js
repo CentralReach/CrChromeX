@@ -47,15 +47,15 @@ class CrApi {
 		var now = Date.now();
 
 		if (!startDate) {
-			startDate = now - 72000000
+			startDate = ((now - 72000000) / 1000) | 0;
 		}
 		if (!endDate) {
-			endDate = now + 100800000
+			endDate = ((now + 100800000) / 1000) | 0;
 		}
 
   		return  this.send('GET', '/schedule/events', {
   							StartDate: startDate,
-  							endDate: endDate
+  							EndDate: endDate
   						})
 		  			.then(r => {
 			  				return this.crcl('getEvents', r.response);
