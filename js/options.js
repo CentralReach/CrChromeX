@@ -26,25 +26,36 @@ function saveOptions() {
         chrome.alarms.clearAll();
     }
 
-    chrome.storage.sync.set({
-        crNotifyMessages: crNotifyMessages,
-        crNotifyEvents: crNotifyEvents,
-        crOpenNewTab: crOpenNewTab,
-        crNeverActiveTab: crNeverActiveTab,
-        crClearNotificationAfter: crClearNotificationAfter,
+    chrome.storage.sync.get({
         crEventsOffsetMinutes: crEventsOffsetMinutes,
-        crEventReminderBuffer: crEventReminderBuffer,
-        crEventReminderSnooze: crEventReminderSnooze
-    }, function() {
-        var status = document.getElementById('status');
+        crEventReminderBuffer: crEventReminderBuffer
+    }, function(x) {
+        var reloadEvents = (x.crEventsOffsetMinutes != crEventsOffsetMinutes || x.crEventReminderBuffer != crEventReminderBuffer);
 
-        status.textContent = 'Options saved.';
+        chrome.storage.sync.set({
+            crNotifyMessages: crNotifyMessages,
+            crNotifyEvents: crNotifyEvents,
+            crOpenNewTab: crOpenNewTab,
+            crNeverActiveTab: crNeverActiveTab,
+            crClearNotificationAfter: crClearNotificationAfter,
+            crEventsOffsetMinutes: crEventsOffsetMinutes,
+            crEventReminderBuffer: crEventReminderBuffer,
+            crEventReminderSnooze: crEventReminderSnooze
+        }, function() {
+            var status = document.getElementById('status');
 
-        setTimeout(function() {
-            status.textContent = '';
-        }, 2000);
+            status.textContent = 'Options saved.';
 
+            setTimeout(function() {
+                status.textContent = '';
+            }, 2000);
+
+            if (reloadEvents) {
+                chrome.runtime.sendMessage({ action: 'crOnStartup'});
+            }
+        });
     });
+
 }
 
 function restoreOptions() {

@@ -1,5 +1,6 @@
 chrome.runtime.onInstalled.addListener(function(d) {
 	crApi.listenForMyNotifications(m => handleMyNotification(m));
+	onStartup();
 });
 
 chrome.runtime.onMessage.addListener(function(request, sender, response) {
@@ -16,6 +17,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, response) {
 
     } else if (request.action == 'crGetEvents') {
     	getEventsToMonitor();
+    } else if (request.action == 'crOnStartup') {
+    	onStartup();
     }
 });
 
@@ -94,6 +97,11 @@ chrome.notifications.onClosed.addListener(function(notificationId, byUser) {
 	clearEventAlarmAndNotify(notificationId);
 });
 
+function onStartup() {
+	scanAndProcessLocalEvents();
+	getEventsToMonitor();
+}
+
 function handleMyNotification(msg) {
 	if (!msg) {
 		return;
@@ -136,7 +144,7 @@ function goToNotificationUrl(url) {
 		if (r.crOpenNewTab) {
 			chrome.tabs.create({ url: url });
 		} else {
-			chrome.tabs.query({ url: '*://members*.centralreach.com/*' }, function(tabs) {
+			chrome.tabs.query({ url: 'http*://members*.centralreach.com/*' }, function(tabs) {
 				if (!tabs || tabs.length <= 0) { 
 					chrome.tabs.create({ url: url });
 					return;
@@ -215,7 +223,7 @@ function processEventNotification(msg) {
 			return;
 		}
 
-		createEventAlarm(msg, r.crEventsOffsetMinutes);
+		createEventAlarmFromServer(msg, r.crEventsOffsetMinutes);
 	});
 }
 
@@ -308,6 +316,19 @@ function clearEventAlarmAndNotify(notificationId, alarmName) {
 	chrome.notifications.clear(notificationId);
 }
 
+function toEventDateTime(unixTs, crOffsetMinutes) {
+	var myUnixTs = unixTs * 1;
+
+	if (myUnixTs <= 2147483647) {
+		myUnixTs = myUnixTs * 1000;
+	}
+
+	var utcDate = new Date(myUnixTs);
+	var utcAdd = utcDate.getTimezoneOffset() * 60000;
+	var crAdd = crOffsetMinutes ? (crOffsetMinutes * 60000) : 0;
+	return new Date(utcDate.getTime() + utcAdd + crAdd);
+}
+
 function getEventsToMonitor() {
 
 	crApi.getEvents()
@@ -331,7 +352,7 @@ function getEventsToMonitor() {
 					var url = e.urlPath;
 
 					if (!url) {
-						var eventDateTime = new Date(e.eventStart * 1000);
+						var eventDateTime = toEventDateTime(e.eventStart);
 						var displayMonth = `0${eventDateTime.getMonth() + 1}`.slice(-2);
 						var displayDay = `0${eventDateTime.getDate()}`.slice(-2);
 						var dateString = `${eventDateTime.getFullYear()}-${displayMonth}-${displayDay}`;
@@ -339,7 +360,7 @@ function getEventsToMonitor() {
 						url = `https://members.centralreach.com/#scheduling/edit/a/${e.courseId}/dt/${dateString}`;
 					}
 
-					createEventAlarm({
+					createEventAlarmFromServer({
 						occursAt: e.eventStart,
 						recordId: e.courseId,
 						urlPath: url,
@@ -352,26 +373,42 @@ function getEventsToMonitor() {
 		});
 }
 
-function createEventAlarm(msg, offsetMinutes) {
-	var myEventOccursAt = (msg.occursAt * 1000) + offsetMinutes;
-	var now = Date.now();
-	var ignoreAfter = now + 200000000; // basically +2 day
-	var eventLocalId = 'cre-' + msg.recordId;
-
-	if (myEventOccursAt < now || myEventOccursAt > ignoreAfter) {
-		return;
+function eventQualifiesForAlarm(occursAtLocally) {
+	if (!occursAtLocally) {
+		return false;
 	}
 
-	chrome.storage.sync.get({
-		crEventReminderBuffer: 5
-	}, function(r) {
-		var eventModel64 = forge.util.encode64(JSON.stringify({
+	var now = Date.now();
+	var ignoreAfter = now + 200000000; // basically +2 day
+
+	return eventOccursAtLocally >= now && eventOccursAtLocally <= ignoreAfter;
+}
+
+function createEventAlarmFromServer(msg, offsetMinutes) {
+	var myEventOccursAt = toEventDateTime(msg.occursAt, offsetMinutes).getTime();
+	
+	createEventAlarmLocal({
 			url: msg.urlPath,
 			from: msg.from,
 			title: msg.title,
 			occursAt: myEventOccursAt,
-			message: msg.message
-		}));
+			message: msg.message,
+			courseId: msg.recordId
+		});
+
+}
+
+function createEventAlarmLocal(eventModel) {
+	if (!eventModel || !eventModel.occursAt || !eventQualifiesForAlarm(eventModel.occursAt)) {
+		return;
+	}
+
+	var eventLocalId = 'cre-' + eventModel.courseId;
+
+	chrome.storage.sync.get({
+		crEventReminderBuffer: 5
+	}, function(r) {
+		var eventModel64 = forge.util.encode64(JSON.stringify(eventModel));
 
 		chrome.storage.local.set({
 			[eventLocalId]: eventModel64
@@ -386,27 +423,31 @@ function createEventAlarm(msg, offsetMinutes) {
 	});
 }
 
-function getExisting() {
+function scanAndProcessLocalEvents() {
 	chrome.storage.local.get(null, function(items) {
 		if (chrome.runtime.lastError || !items) {
 			return;
 		}
 
-		Object.keys(items).forEach(function(e) {
-			if (!e || e.substring(0,4) != 'cre-') {
+		Object.keys(items).forEach(function(ek) {
+			if (!ek || ek.substring(0,4) != 'cre-') {
 				return;
 			}
 
-			var eventModel = JSON.parse(forge.util.decode64(items[e]));
+			var eventModel = JSON.parse(forge.util.decode64(items[ek]));
 
 			if (!eventModel) {
-				chrome.storage.local.remove(items[e]);
+				chrome.storage.local.remove(items[ek]);
 			}
 
-			// var notificationId = forge.util.encode64(eventModel.url);
+			var notificationId = forge.util.encode64(eventModel.url);
 
-			// reschedule the alarm if it is still in the future...remove it if not...
+			if (!eventQualifiesForAlarm(eventModel.occursAt)) {
+				clearEventAlarmAndNotify(notificationId, ek);
+			}
 
+			// Reschedule the alarm
+			createEventAlarmLocal(eventMode);
 		});
 	});
 }
