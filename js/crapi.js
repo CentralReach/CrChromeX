@@ -18,7 +18,7 @@ class CrApi {
 	  			crApiCurrentSessionId: '',
 	  			crApiUrl: ''
 	  		}, function (r) {
-	  			crApi.baseApiUrl = crApi.baseApiUrl || r.crApiUrl || 'https://members.centralreach.com/crxapi';
+	  			crApi.baseApiUrl = crApi.baseApiUrl || r.crApiUrl || 'https://crapi.centralreach.com';
 				crApi.apiToken = r.crApiToken || '';
 				crApi.apiSession = r.crApiCurrentSessionId || '';
 	  		});
@@ -75,15 +75,22 @@ class CrApi {
 
 		return  this.ensureAuthenticated()
 					.then(() => {
-							if (this.eventSource) {
+							return crLocalGet({
+						  		crApiToken: '',
+						  		crApiCurrentSessionId: ''
+							});
+						})
+					.then(i => {
+							if (this.eventSource || !i || !i.crApiToken || !i.crApiCurrentSessionId) {
 								return false;
 							}
 
-							this.eventSource = new EventSource(this.baseApiUrl + '/event-stream?channels=ServerUserItemNotification', { withCredentials: true });
+							this.eventSource = new EventSource(this.baseApiUrl + '/event-stream?channels=ServerUserItemNotification,ChatMessageNotification&crapitkn=' + i.crApiToken + '&crapisid=' + i.crApiCurrentSessionId, { withCredentials: true });
 
 							$(this.eventSource).handleServerEvents({
 						        handlers: {
-						            ServerUserMessage: msgCallback
+						            ServerUserMessage: msgCallback,
+						            ChatUserMessage: msgCallback
 						        }
 							});
 

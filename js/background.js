@@ -12,8 +12,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, response) {
 
     } else if (request.action == 'crStopEvents') {
     	
-    	crApi.stopMyNotifications()
-    		 .then(r => response(r));
+    	crApi.stopMyNotifications();
 
     } else if (request.action == 'crGetEvents') {
     	getEventsToMonitor();
@@ -108,21 +107,27 @@ function handleMyNotification(msg) {
 	}
 
 	if (msg.messageType == 'message') {
-		processMessageNotification(msg);
+		processSimpleUrlLinkNotification(msg, 'crNotifyMessages', 'MSG');
 	} else if (msg.messageType == 'event') {
 		processEventNotification(msg);
+	} else if (msg.messageType == 'chat') {
+		processChatNotification(msg);
+	} else if (msg.messageType == 'savedfilter') {
+		processSimpleUrlLinkNotification(msg, 'crNotifyFilters', 'SF');
 	}
 }
 
-function getMsgNotificationId(msg, useUrl) {
+function getMsgNotificationId(msg, useUrl, nonUrlPrefix) {
 	return useUrl && msg.urlPath 
 				? forge.util.encode64(msg.urlPath) 
-				: 'crmsg-' + msg.messageType + '-' + msg.recordId;
+				: 'cr' + (nonUrlPrefix ? nonUrlPrefix : 'usn') + '-' + msg.messageType + '-' + msg.recordId;
 }
 
 function getUrlFromNotificationId(notificationId) {
 	if (notificationId.substring(0,6) == 'crmsg-') {
 		return null;
+	} else if (notificationId.substring(0,5) == 'crrm-') {
+		return 'https://members.centralreach.com/#messaging/chat';
 	}
 
 	var url = forge.util.decode64(notificationId);
@@ -144,7 +149,7 @@ function goToNotificationUrl(url) {
 		if (r.crOpenNewTab) {
 			chrome.tabs.create({ url: url });
 		} else {
-			chrome.tabs.query({ url: 'http*://members*.centralreach.com/*' }, function(tabs) {
+			chrome.tabs.query({ url: 'https://members*.centralreach.com/*' }, function(tabs) {
 				if (!tabs || tabs.length <= 0) { 
 					chrome.tabs.create({ url: url });
 					return;
@@ -178,26 +183,59 @@ function goToNotificationUrl(url) {
 	});
 }
 
-function processMessageNotification(msg) {
+function processChatNotification(msg) {
 	chrome.storage.sync.get({
-		crNotifyMessages: true,
+		crNotifyChat: true,
 		crClearNotificationAfter: 0
 	}, function(r) {
 		if (chrome.runtime.lastError) {
 			return;
 		}
-		if (!r.crNotifyMessages) {
+		if (!r.crNotifyChat) {
 			return;
 		}
 
-		var notificationId = getMsgNotificationId(msg, true);
+		var notificationId = 'crrm-' + msg.messageId;
 
 		chrome.notifications.clear(notificationId);
 
 		chrome.notifications.create(notificationId, {
 			type: 'basic',
 			iconUrl: 'images/notify.png',
-			title: 'From: ' + msg.from,
+			title: 'RM: ' + msg.dialogName,
+			message: msg.message,
+			isClickable: true,
+			requireInteraction: false
+		}, function(nid) {
+			if (r.crClearNotificationAfter > 0) {
+				setTimeout(function() {
+					chrome.notifications.clear(nid);
+				}, (r.crClearNotificationAfter * 1000));
+			}
+		});
+	});
+}
+
+function processSimpleUrlLinkNotification(msg, notifyKey, titlePrefix) {
+	chrome.storage.sync.get({
+		[notifyKey]: true,
+		crClearNotificationAfter: 0
+	}, function(r) {
+		if (chrome.runtime.lastError) {
+			return;
+		}
+		if (!r[notifyKey]) {
+			return;
+		}
+
+		var notificationId = getMsgNotificationId(msg, true, titlePrefix ? titlePrefix.toLowerCase() : 'usn');
+
+		chrome.notifications.clear(notificationId);
+
+		chrome.notifications.create(notificationId, {
+			type: 'basic',
+			iconUrl: 'images/notify.png',
+			title: (titlePrefix ? titlePrefix + ': ' : '') + msg.from,
 			message: msg.title,
 			isClickable: true,
 			requireInteraction: false
@@ -381,7 +419,7 @@ function eventQualifiesForAlarm(occursAtLocally) {
 	var now = Date.now();
 	var ignoreAfter = now + 200000000; // basically +2 day
 
-	return eventOccursAtLocally >= now && eventOccursAtLocally <= ignoreAfter;
+	return occursAtLocally >= now && occursAtLocally <= ignoreAfter;
 }
 
 function createEventAlarmFromServer(msg, offsetMinutes) {

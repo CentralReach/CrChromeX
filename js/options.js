@@ -1,6 +1,8 @@
 function saveOptions() {
     var crNotifyMessages = document.getElementById('crnotifymessages').checked;
     var crNotifyEvents = document.getElementById('crnotifyevents').checked;
+    var crNotifyChats = document.getElementById('crnotifychats').checked;
+    var crNotifyFilters = document.getElementById('crnotifyfilters').checked;
     var crOpenNewTab = document.getElementById('cropennewtab').checked;
     var crNeverActiveTab = document.getElementById('crneveractivetab').checked;
     var crClearNotificationAfter = document.getElementById('crclearnotificationafter').value;
@@ -35,6 +37,8 @@ function saveOptions() {
         chrome.storage.sync.set({
             crNotifyMessages: crNotifyMessages,
             crNotifyEvents: crNotifyEvents,
+            crNotifyChats: crNotifyChats,
+            crNotifyFilters: crNotifyFilters,
             crOpenNewTab: crOpenNewTab,
             crNeverActiveTab: crNeverActiveTab,
             crClearNotificationAfter: crClearNotificationAfter,
@@ -62,6 +66,8 @@ function restoreOptions() {
     chrome.storage.sync.get({
         crNotifyMessages: true,
         crNotifyEvents: true,
+        crNotifyChats: true,
+        crNotifyFilters: true,
         crOpenNewTab: false,
         crNeverActiveTab: false,
         crClearNotificationAfter: 0,
@@ -71,6 +77,8 @@ function restoreOptions() {
     }, function(items) {
         document.getElementById('crnotifymessages').checked = items.crNotifyMessages;
         document.getElementById('crnotifyevents').checked = items.crNotifyEvents;
+        document.getElementById('crnotifychats').checked = items.crNotifyChats;
+        document.getElementById('crnotifyfilters').checked = items.crNotifyFilters;
         document.getElementById('cropennewtab').checked = items.crOpenNewTab;
         document.getElementById('crneveractivetab').checked = items.crNeverActiveTab;
         document.getElementById('crclearnotificationafter').value = items.crClearNotificationAfter;
