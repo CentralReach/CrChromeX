@@ -5,7 +5,7 @@ CentralReach Chrome Helper
 
 Now available in the chrome web store here:
 
-https://chrome.google.com/webstore/detail/
+https://chrome.google.com/webstore/detail/okidombmopmppkhaejjimokjhaeandnp
 
 If you prefer, you can also simply clone this repo and load it as an upacked extension, which requires running your extensions in developer mode.
 
