@@ -22,11 +22,6 @@ After installing:
 
 Provides [native system notifications/alerts/reminders](https://developers.google.com/web/updates/2017/04/native-mac-os-notifications) for various CentralReach features, including:
 
-* [ReachMe RM's](https://centralreach.com/features/reachme)
-  * Receive notifications when new RMs are sent your way
-* Saved Filter result count changes
-  * Receive notifications when changes in the # of results are detected for your saved filters
-
 ### [Notify on new Messages](#notify-on-new-messages)
 
 If you have the [Show Message Notifications](#show-message-notifications) option enabled you will be notified upon receipt of a new message in your CentralReach inbox.
