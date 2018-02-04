@@ -43,11 +43,13 @@ chrome.notifications.onClicked.addListener(function(notificationId) {
 		goToNotificationUrl(url);
 	}
 
-	clearEventAlarmAndNotify(notificationId);
+	clearEventAlarmAndNotify(notificationId, null, true);
 });
 
 chrome.notifications.onButtonClicked.addListener(function(notificationId, buttonIndex) {
 	if (buttonIndex == 0) {
+		chrome.notifications.clear(notificationId);
+
 		// Snooze the reminder to this event for x minutes
 		chrome.storage.local.get({
 			[notificationId]: null
@@ -93,12 +95,41 @@ chrome.notifications.onButtonClicked.addListener(function(notificationId, button
 
 chrome.notifications.onClosed.addListener(function(notificationId, byUser) {
 	// Close should clear, but to be safe on all versions...
-	clearEventAlarmAndNotify(notificationId);
+	clearEventAlarmAndNotify(notificationId, null, true);
 });
 
 function onStartup() {
 	scanAndProcessLocalEvents();
 	getEventsToMonitor();
+}
+
+function clearEventAlarmAndNotify(notificationId, alarmName, force) {
+	chrome.storage.local.remove(notificationId);
+
+	chrome.notifications.clear(notificationId, function(wasCleared) {
+		if (force || wasCleared) {
+
+			if (alarmName) {
+				chrome.storage.local.remove(alarmName);
+			} else {
+				chrome.storage.local.get({
+					[notificationId]: null
+				}, function(r) {
+					if (chrome.runtime.lastError) {
+						return;
+					}
+					if (!r || !r[notificationId]) { 
+						return;
+					}
+
+					chrome.storage.local.remove(r[notificationId]);
+				});
+			}
+
+			chrome.notifications.clear(notificationId);
+		}
+	});
+
 }
 
 function handleMyNotification(msg) {
@@ -322,36 +353,13 @@ function handleEventAlarm(a) {
 				}, function(nid) {
 					if (crClearNotificationAfter > 0) {
 						setTimeout(function() {
-							clearEventAlarmAndNotify(nid, alarmName);
+							clearEventAlarmAndNotify(nid, alarmName, false);
 						}, (crClearNotificationAfter * 1000));
 					}
 				});
 			});
 		});
 	});
-}
-
-function clearEventAlarmAndNotify(notificationId, alarmName) {
-	chrome.storage.local.remove(notificationId);
-
-	if (alarmName) {
-		chrome.storage.local.remove(alarmName);
-	} else {
-		chrome.storage.local.get({
-			[notificationId]: null
-		}, function(r) {
-			if (chrome.runtime.lastError) {
-				return;
-			}
-			if (!r || !r[notificationId]) { 
-				return;
-			}
-
-			chrome.storage.local.remove(r[notificationId]);
-		});
-	}
-
-	chrome.notifications.clear(notificationId);
 }
 
 function toEventDateTime(unixTs, crOffsetMinutes) {
@@ -455,7 +463,7 @@ function createEventAlarmLocal(eventModel) {
 				return;
 			}
 
-			var alarmAt = (myEventOccursAt - (r.crEventReminderBuffer * 60000));
+			var alarmAt = (eventModel.occursAt - (r.crEventReminderBuffer * 60000));
 			chrome.alarms.create(eventLocalId, { when: alarmAt });
 		});
 	});
@@ -481,7 +489,7 @@ function scanAndProcessLocalEvents() {
 			var notificationId = forge.util.encode64(eventModel.url);
 
 			if (!eventQualifiesForAlarm(eventModel.occursAt)) {
-				clearEventAlarmAndNotify(notificationId, ek);
+				clearEventAlarmAndNotify(notificationId, ek, true);
 			}
 
 			// Reschedule the alarm
