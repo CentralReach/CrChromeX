@@ -120,13 +120,14 @@ class CrApi {
 
   		this.crcl('stopMyNotifications', 'closing and reloading');
 
-  		if (this.eventSource) {
-  			this.eventSource.close();
-  		}
-
   		if ($.ss.eventSource) {
 	 		$.ss.eventSource.close();
  		}
+
+  		if (this.eventSource) {
+  			this.eventSource.close();
+  			this.eventSource = null;
+  		}
 
   		chrome.runtime.reload();
   	}

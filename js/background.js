@@ -24,7 +24,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, response) {
 chrome.alarms.onAlarm.addListener(function(a) {
 	if (a.name.substring(0,4) == 'cre-') {
 		handleEventAlarm(a);
+	} else if (a.name == 'crcxsystimer') {
+		crApi.listenForMyNotifications(m => handleMyNotification(m));
 	}
+
 });
 
 window.addEventListener('online', function(e) {
@@ -101,6 +104,13 @@ chrome.notifications.onClosed.addListener(function(notificationId, byUser) {
 function onStartup() {
 	scanAndProcessLocalEvents();
 	getEventsToMonitor();
+
+	chrome.alarms.clear('crcxsystimer', function(wasCleared) {
+		chrome.alarms.create('crcxsystimer', { 
+			delayInMinutes: 4, 
+			periodInMinutes: 4 
+		});
+	});
 }
 
 function clearEventAlarmAndNotify(notificationId, alarmName, force) {
