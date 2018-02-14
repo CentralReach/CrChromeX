@@ -9,6 +9,7 @@ function saveOptions() {
     var crEventsOffsetMinutes = document.getElementById('creventsoffsetminutes').value;
     var crEventReminderBuffer = document.getElementById('creventreminderbuffer').value;
     var crEventReminderSnooze = document.getElementById('creventremindersnooze').value;
+    var crMessageOnEventChanges = document.getElementById('crmessageoneventchanges').checked;
     
     if (crClearNotificationAfter > 10) {
         crClearNotificationAfter = 10
@@ -30,9 +31,11 @@ function saveOptions() {
 
     chrome.storage.sync.get({
         crEventsOffsetMinutes: crEventsOffsetMinutes,
-        crEventReminderBuffer: crEventReminderBuffer
+        crEventReminderBuffer: crEventReminderBuffer,
+        crMessageOnEventChanges: crMessageOnEventChanges
     }, function(x) {
         var reloadEvents = (x.crEventsOffsetMinutes != crEventsOffsetMinutes || x.crEventReminderBuffer != crEventReminderBuffer);
+        var messageSubscribeUpdate = x.crMessageOnEventChanges != crMessageOnEventChanges;
 
         chrome.storage.sync.set({
             crNotifyMessages: crNotifyMessages,
@@ -44,7 +47,8 @@ function saveOptions() {
             crClearNotificationAfter: crClearNotificationAfter,
             crEventsOffsetMinutes: crEventsOffsetMinutes,
             crEventReminderBuffer: crEventReminderBuffer,
-            crEventReminderSnooze: crEventReminderSnooze
+            crEventReminderSnooze: crEventReminderSnooze,
+            crMessageOnEventChanges: crMessageOnEventChanges
         }, function() {
             var status = document.getElementById('status');
 
@@ -56,6 +60,9 @@ function saveOptions() {
 
             if (reloadEvents) {
                 chrome.runtime.sendMessage({ action: 'crOnStartup'});
+            }
+            if (messageSubscribeUpdate) {
+                chrome.runtime.sendMessage({ action: 'crMessageOnEventSubscription'});
             }
         });
     });
@@ -73,7 +80,8 @@ function restoreOptions() {
         crClearNotificationAfter: 0,
         crEventsOffsetMinutes: 0,
         crEventReminderBuffer: 5,
-        crEventReminderSnooze: 2
+        crEventReminderSnooze: 2,
+        crMessageOnEventChanges: false
     }, function(items) {
         document.getElementById('crnotifymessages').checked = items.crNotifyMessages;
         document.getElementById('crnotifyevents').checked = items.crNotifyEvents;
@@ -85,6 +93,7 @@ function restoreOptions() {
         document.getElementById('creventsoffsetminutes').value = items.crEventsOffsetMinutes;
         document.getElementById('creventreminderbuffer').value = items.crEventReminderBuffer;
         document.getElementById('creventremindersnooze').value = items.crEventReminderSnooze;
+        document.getElementById('crmessageoneventchanges').checked = items.crMessageOnEventChanges;        
     });
 }
 

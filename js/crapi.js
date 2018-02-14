@@ -64,6 +64,34 @@ class CrApi {
 			  			});
   	}
 
+  	subscribeToMessageType(messageType, notificationMedium) {
+		this.crcl('subscribeToMessageType', 'starting');
+
+  		return  this.send('POST', '/userevents/subscribe', {
+  							MessageType: messageType,
+  							NotificationMedium: notificationMedium
+  						})
+		  			.then(r => {
+			  				return this.crcl('subscribeToMessageType', r.response);
+			  			}, x => {
+			  				return this.crclx('subscribeToMessageType', x);
+			  			});
+  	}
+
+  	unsubscribeFromMessageType(messageType, notificationMedium) {
+		this.crcl('unsubscribeFromMessageType', 'starting');
+
+  		return  this.send('DELETE', '/userevents/subscribe', {
+  							MessageType: messageType,
+  							NotificationMedium: notificationMedium
+  						})
+		  			.then(r => {
+			  				return this.crcl('unsubscribeFromMessageType', r.response);
+			  			}, x => {
+			  				return this.crclx('unsubscribeFromMessageType', x);
+			  			});
+  	}
+
 	listenForMyNotifications(msgCallback) {
 		if (!navigator.onLine) {
 			return Promise.resolve(false);

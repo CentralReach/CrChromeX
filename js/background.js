@@ -18,6 +18,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, response) {
     	getEventsToMonitor();
     } else if (request.action == 'crOnStartup') {
     	onStartup();
+    } else if (request.action == 'crMessageOnEventSubscription') {
+		chrome.storage.sync.get({
+			crMessageOnEventChanges: false
+		}, function(i) {
+			if (i.crMessageOnEventChanges) {
+				crApi.subscribeToMessageType('Event', 'Message');
+			} else {
+				crApi.unsubscribeFromMessageType('Event', 'Message');
+			}
+		});
     }
 });
 

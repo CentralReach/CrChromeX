@@ -61,6 +61,10 @@ Turn this option on to be notified when you [receive a new RM](#notify-on-reachm
 
 Turn this option on to be notified when [filters you have saved](#notify-on-saved-filter-updates) inside the CentralReach platform produce new and/or different result counts.
 
+### [Send CR Message on Appointment Updates](#send-cr-message-on-appointment-updates)
+
+Turn this option on to receive a CR Message anytime an appointment you are a participant in is created, updated, or cancelled/deleted.
+
 ### [Always open notifications in new tab](#always-open-notifications-in-new-tab)
 
 Enable this option to always open links associated with notifications in a new tab in your browser. By default links are opened in the first tab of a browser that is opened to the CentralReach members site.
