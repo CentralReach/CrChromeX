@@ -93,3 +93,15 @@ Set this to the number of minutes prior to appointments on your schedule to be r
 
 Set this to the number of minutes to snooze reminders for if you choose to do so.
 
+## [Popup](#popup)
+
+Here you can manually enable, stop, and get events/notifications (not typically needed, here simply for convenience) and enter and/or change the credentials you use to link the extension to the CentralReach platform (required once per browser/machine).
+
+#### [CentralReach Credentials](#centralreach-credentials)
+
+Must be entered once before events/notifications will start displaying. 
+
+The Username and Password for the CR account to which the extension should be linked/show notifications for. Typically this would be your personal CentralReach Members platform credentials/login.
+
+These credentials are not synced to your google account and/or across browsers (purposely), so this step must be completed on every machine/browser you wish to receive notifications on.
+
