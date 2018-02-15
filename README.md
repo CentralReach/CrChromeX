@@ -67,7 +67,7 @@ Turn this option on to be notified when [filters you have saved](#notify-on-save
 
 #### [Send CR Message on Appointment Updates](#send-cr-message-on-appointment-updates)
 
-Turn this option on to receive a CR Message anytime an appointment you are a participant in is created, updated, or cancelled/deleted if the event occurs within the previous day, today, or tomorrow (i.e. yesterday, today, tomorrow).
+Turn this option on to receive a CR Message anytime an appointment you are a participant in is created, updated, or cancelled/deleted if the event occurs within the previous day, current day, or next day (i.e. yesterday, today, tomorrow).
 
 #### [Always open notifications in new tab](#always-open-notifications-in-new-tab)
 
