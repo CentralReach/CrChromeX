@@ -7,7 +7,7 @@ NOTE TO CUSTOMERS: The use of this extension will produce native chrome browser 
 
 ## [Installing](#installing)
 
-Now available in the chrome web store here:
+Available for install directly from the chrome web store here (note that it is not findable/searchable in the store yet, you must have the link below):
 
 https://chrome.google.com/webstore/detail/okidombmopmppkhaejjimokjhaeandnp
 
