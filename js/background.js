@@ -13,11 +13,15 @@ chrome.runtime.onMessage.addListener(function(request, sender, response) {
     } else if (request.action == 'crStopEvents') {
     	
     	crApi.stopMyNotifications();
+    	response();
 
     } else if (request.action == 'crGetEvents') {
-    	getEventsToMonitor();
+    	getEventsToMonitor()
+    		.then(r = response(r));
+
     } else if (request.action == 'crOnStartup') {
     	onStartup();
+    	response();
     } else if (request.action == 'crMessageOnEventSubscription') {
 		chrome.storage.sync.get({
 			crMessageOnEventChanges: false
@@ -27,6 +31,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, response) {
 			} else {
 				crApi.unsubscribeFromMessageType('Event', 'Message');
 			}
+
+			response();
 		});
     }
 });

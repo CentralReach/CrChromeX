@@ -8,45 +8,117 @@
     	<script src="js/crapi.js"></script>
     	<script src="js/popup.js"></script>
   	</head>
+  	<style type="text/css">
+		body {
+			margin: 0;
+			min-width: 200px;
+			padding: 15px;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+
+		.section {
+			margin: 8px 0px 15px 0px;
+		}
+
+		body .section:first-child {
+			margin-top: 0px;
+		}
+
+		body .section:last-child {
+			margin-bottom: 0px;
+		}
+
+		.section .title {
+			font-weight: 600;
+			color: #666;
+		}
+
+		.sub-section {
+			font-size: 0.85em;
+			margin-top: 8px;
+		}
+
+		select option {
+			-webkit-appearance: none;
+			padding: 5px;
+		}
+
+		#cancelCredsUpdate {
+			margin-left: 8px;
+			display: none;
+		}
+
+		#credentialsSaved {
+			display: none;
+		}
+
+		#settings {
+			cursor: pointer;
+			position: absolute;
+			top: 3px;
+			right: 9px;
+		}
+
+		#status {
+			border-top: solid .5px lightgray;
+			margin-top: 15px;
+			margin-bottom: -22px;
+			margin-left: -15px;
+			margin-right: -15px;
+			padding: 9px 8px 6px 8px;
+			font-size: 0.9em;
+			min-height: 14px;
+			color: #666;
+		}
+	</style>
+	<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
   	<body>
-		<div>
-    		<button id="crenableevents">Enable Events</button>
-    	</div>
-    	<br/>
-		<div>
-    		<button id="crstopevents">Stop Events</button>
-    	</div>
-    	<br/>
-		<div>
-    		<button id="crgetevents">Get Events</button>
-    	</div>
-    	<br/>
-
-		<div>
-			<label>
-			  	CentralReach UserName
-			  	<input type="password" id="crapiuser">
-			</label>
+		<div id="settings">
+			<i id="crsettings" class="fa fa-cog" title="Extension Settings"></i>
 		</div>
 
-		<div>
-			<label>
-				CentralReach Password
-				<input type="password" id="crapipw">
-			</label>
+		<div id="eventActions" class="section">
+			<div class="sub-section">
+				<a id="crenableevents" href="#">Enable/Re-enable All Events</a>
+			</div>			
+			<div class="sub-section">
+				<a id="crstopevents" href="#">Stop All Events</a>
+			</div>
+			<div class="sub-section">
+				<a id="crgetevents" href="#">Get Schedule/Appointments</a>
+			</div>
 		</div>
 
-		<br/>
-		<div>
-			<button id="crauthsettings">Submit Credentials</button>
+		<div id="credentialsInputForm" class="section">
+			<div>
+				<label>
+					CentralReach UserName
+					<input type="password" id="crapiuser">
+				</label>
+			</div>
+
+			<div>
+				<label>
+					CentralReach Password
+					<input type="password" id="crapipw">
+				</label>
+			</div>
+
+			<div>
+				<button id="crauthsettings">Submit Credentials</button>
+				<a id="cancelCredsUpdate" href="#">Cancel</a>
+			</div>
 		</div>
-		<div id="crsavecredsstatus"></div>
-		<br/>
-		<br/>
 
+		<div id="credentialsSaved" class="section">
+			<div>Your credentials are on file.</div>
+			<div>
+				<a id="updateCredsLink" href="#">Update Credentials</a>
+			</div>
+		</div>
 
-		<div>
-    		<button id="crsettings">Settings</button>
-    	</div>
+		<div id="status"></div>
+
 	</body>
 </html>	
