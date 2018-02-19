@@ -2,7 +2,18 @@ CentralReach Chrome Helper
 ==============================
 
 
-NOTE TO CUSTOMERS: The use of this extension will produce native chrome browser notifications that may contain information that is privileged or confidential client/customer health information (ePHI).  If you are unsure of your ability to or unable to ensure the privacy and security of this information please be aware that any disclosure, copying, or distribution of this information is prohibited and protected under HIPAA regulations, and you should not install or use this extension. You and/or your organization is personally responsible for securing any ePHI displayed in or exported from the CentralReach platform according to the HIPAA Security Rule requirements.
+NOTE TO CUSTOMERS: 
+
+Please reference the entire terms of service for the CentralReach platform to understand your responsibilities as it relates to data removed from/displayed from the CentralReach platform at the following link:
+
+https://centralreach.com/terms-of-service/
+
+Pay particular attention to the following section:
+
+*Removal of Data from Platform. Customer understands that the intended HIPAA security of the CentralReach Platform is negated when data is taken off the platform. Customer is solely responsible for ensuring PHI remains protected when it is exported, downloaded or otherwise removed from the CentralReach Platform by Customer.*
+
+The use of this extension will produce native chrome browser notifications that may contain information that is privileged or confidential client/customer health information (ePHI).  If you are unsure of your ability to or unable to ensure the privacy and security of this information please be aware that any disclosure, copying, or distribution of this information is prohibited and protected under HIPAA regulations, and you should not install or use this extension. You and/or your organization is personally responsible for securing any ePHI exported from or displayed in/from the CentralReach platform according to the HIPAA Security Rule requirements.
+
 
 
 ## [Installing](#installing)
