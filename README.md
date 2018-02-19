@@ -1,8 +1,7 @@
 CentralReach Chrome Helper
 ==============================
 
-
-NOTE TO CUSTOMERS: 
+NOTE TO USERS: 
 
 Please reference the entire terms of service for the CentralReach platform to understand your responsibilities as it relates to data removed from/displayed from the CentralReach platform at the following link:
 
