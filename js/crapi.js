@@ -41,7 +41,7 @@ class CrApi {
 			  			});
   	}
 
-  	getEvents(startDate, endDate) {
+  	getEvents(startDate, endDate, afterVersion) {
 		this.crcl('getEvents', 'starting');
 
 		var now = Date.now();
@@ -53,9 +53,12 @@ class CrApi {
 			endDate = ((now + 100800000) / 1000) | 0;
 		}
 
+		var afterVer = this.isPositiveInt(afterVersion) ? afterVersion : 0;		
+
   		return  this.send('GET', '/schedule/events', {
   							StartDate: startDate,
-  							EndDate: endDate
+  							EndDate: endDate,
+  							AfterVersion: afterVer
   						})
 		  			.then(r => {
 			  				return this.crcl('getEvents', r.response);
@@ -183,6 +186,9 @@ class CrApi {
   		return false;
   	}
 
+	isPositiveInt(iVal) {
+	  return iVal && !isNaN(iVal) && isFinite(iVal) && iVal > 0;
+	}
 	//*****************************************************************************
   	// PRIVATE FUNCTIONAL METHODS
 	//*****************************************************************************

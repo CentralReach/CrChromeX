@@ -42,6 +42,7 @@ chrome.alarms.onAlarm.addListener(function(a) {
 		handleEventAlarm(a);
 	} else if (a.name == 'crcxsystimer') {
 		crApi.listenForMyNotifications(m => handleMyNotification(m));
+		getEventsToMonitor();
 	}
 
 });
@@ -105,7 +106,9 @@ chrome.notifications.onButtonClicked.addListener(function(notificationId, button
 						}
 					}
 
-					chrome.alarms.create(alarmName, { when: alarmTime });
+					chrome.alarms.clear(alarmName, function(wc) {
+						chrome.alarms.create(alarmName, { when: alarmTime });
+					});
 				});
 			});
 		});
@@ -403,46 +406,60 @@ function toEventDateTime(unixTs, crOffsetMinutes) {
 
 function getEventsToMonitor() {
 
-	crApi.getEvents()
-		.then(r => {
-			if (!r || r.failed || !r.results) {
-				return false;
-			}
+	chrome.storage.local.get({
+		eventSyncVersion: 0,
+		lastDateSynced: 0
+	}, function(i) {
+		var dayNum = new Date().getDate();
 
-			chrome.storage.sync.get({
-				crNotifyEvents: true,
-				crEventsOffsetMinutes: 0
-			}, function(s) {
-				if (chrome.runtime.lastError) {
-					return;
-				}
-				if (!s.crNotifyEvents) {
-					return;
+		var syncVer = i.lastDateSynced == dayNum ? i.eventSyncVersion : 0;
+		
+		crApi.getEvents(0, 0, syncVer)
+			.then(r => {
+				if (!r || r.failed || !r.results) {
+					return false;
 				}
 
-				r.results.forEach(function(e) {
-					var url = e.urlPath;
-
-					if (!url) {
-						var eventDateTime = toEventDateTime(e.eventStart);
-						var displayMonth = `0${eventDateTime.getMonth() + 1}`.slice(-2);
-						var displayDay = `0${eventDateTime.getDate()}`.slice(-2);
-						var dateString = `${eventDateTime.getFullYear()}-${displayMonth}-${displayDay}`;
-
-						url = `https://members.centralreach.com/#scheduling/edit/a/${e.courseId}/dt/${dateString}`;
+				chrome.storage.sync.get({
+					crNotifyEvents: true,
+					crEventsOffsetMinutes: 0
+				}, function(s) {
+					if (chrome.runtime.lastError) {
+						return;
+					}
+					if (!s.crNotifyEvents) {
+						return;
 					}
 
-					createEventAlarmFromServer({
-						occursAt: e.eventStart,
-						recordId: e.courseId,
-						urlPath: url,
-						from: e.from || '',
-						title: e.eventName,
-						message: e.eventDescription
-					}, s.crEventsOffsetMinutes);
+					r.results.forEach(function(e) {
+						var url = e.urlPath;
+
+						if (!url) {
+							var eventDateTime = toEventDateTime(e.eventStart);
+							var displayMonth = `0${eventDateTime.getMonth() + 1}`.slice(-2);
+							var displayDay = `0${eventDateTime.getDate()}`.slice(-2);
+							var dateString = `${eventDateTime.getFullYear()}-${displayMonth}-${displayDay}`;
+
+							url = `https://members.centralreach.com/#scheduling/edit/a/${e.courseId}/dt/${dateString}`;
+						}
+
+						createEventAlarmFromServer({
+							occursAt: e.eventStart,
+							recordId: e.courseId,
+							urlPath: url,
+							from: e.from || '',
+							title: e.eventName,
+							message: e.eventDescription
+						}, s.crEventsOffsetMinutes);
+					});
+
+					chrome.storage.local.set({
+						eventSyncVersion: r.atVersion,
+						lastDateSynced: dayNum
+					});
 				});
 			});
-		});
+	});
 }
 
 function eventQualifiesForAlarm(occursAtLocally) {
@@ -490,7 +507,10 @@ function createEventAlarmLocal(eventModel) {
 			}
 
 			var alarmAt = (eventModel.occursAt - (r.crEventReminderBuffer * 60000));
-			chrome.alarms.create(eventLocalId, { when: alarmAt });
+			
+			chrome.alarms.clear(eventLocalId, function(wasCleared) {
+				chrome.alarms.create(eventLocalId, { when: alarmAt });
+			});
 		});
 	});
 }
